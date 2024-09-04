@@ -1,0 +1,16 @@
+{
+  "name": "reverse-proxy",
+  "version": "1.0.0",
+  "description": "A reverse proxy for catapam.com/news",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.17.1",
+    "http-proxy-middleware": "^1.0.6"
+  },
+  "engines": {
+    "node": "14.x"
+  }
+}

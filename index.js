@@ -3,11 +3,11 @@ const { createProxyMiddleware } = require('http-proxy-middleware');
 
 const app = express();
 
-// Proxy requests to /news to the WP Engine site
+// Proxy requests to /news to the WP Engine site, no rewrite
 app.use('/news', createProxyMiddleware({
-    target: 'https://catapam.wpengine.com', // Target your WP Engine site
-    changeOrigin: true,                     // Needed for virtual hosted sites
-    // No need to rewrite path since /news should map directly
+    target: 'https://catapam.wpengine.com',   // Target the root WP Engine URL
+    changeOrigin: true,                       // Keep origin header for proxy
+    // No pathRewrite needed, forward as-is
 }));
 
 // Fallback route for non-proxied requests

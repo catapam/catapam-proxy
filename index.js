@@ -9,7 +9,7 @@ app.use('/news', createProxyMiddleware({
     changeOrigin: true,                      // Keep the correct origin
     pathRewrite: { '^/news': '' },           // Strip /news from the Heroku request path
     headers: {                               // Ensure the X-Forwarded-Host is correct
-        'X-Forwarded-Host': 'catapam.com',
+        'X-Forwarded-Host': 'catapam.wpengine.com',
     }
 }));
 

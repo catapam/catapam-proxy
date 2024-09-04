@@ -15,7 +15,7 @@ app.use('/news', createProxyMiddleware({
 
 // Fallback route for non-proxied requests
 app.get('*', (req, res) => {
-    res.status(404).send('Page not found');
+    res.status(200).send('This is a test');
 });
 
 const PORT = process.env.PORT || 5000;

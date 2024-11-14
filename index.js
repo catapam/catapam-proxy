@@ -14,9 +14,12 @@ const PROXY_URL = process.env.PROXY_URL || `http://localhost:${process.env.PORT 
 app.use(
     `/${PATH_SOURCE}`,
     createProxyMiddleware({
+        target: `https://${TARGET}`,
         changeOrigin: true,
-        router: {
-            [`/${PATH_SOURCE}`]: `https://${TARGET}`,
+        pathRewrite: (path, req) => {
+            // Check if the path already includes the proxy URL and remove it if necessary
+            const cleanedPath = path.replace(new RegExp(`^/${PATH_SOURCE}/${PATH_SOURCE}`), `/${PATH_SOURCE}`);
+            return cleanedPath.replace(`/${PATH_SOURCE}`, ''); // Remove PATH_SOURCE prefix
         },
         logLevel: 'debug',
         headers: {

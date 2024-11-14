@@ -5,29 +5,20 @@ const app = express();
 
 // Environment variables for dynamic configuration
 const TARGET = process.env.TARGET;
-const PATH = process.env.PATH;
-
-// Helper function to rewrite paths to match NGINX rules
-function customPathRewrite(path, req) {
-    return path.replace(/^\/PATH\/?/, '/')
-               .replace(/^\/PATH\/(wp-(?:content|includes|admin))\/(.*)/, '/$1/$2')
-               .replace(/^\/PATH\/([a-z-]+\.[a-z]+)$/, '/$1')
-               .replace(/^\/PATH\/([^/]*)\/?$/, '/$1/')
-               .replace(/^\/PATH\/([^/]*)\/([^/]*)\/?$/, '/$1/$2/')
-               .replace(/^\/PATH\/([^/]*)\/([^/]*)\/([^/]*)\/?$/, '/$1/$2/$3/')
-               .replace(/^\/PATH\/([^/]*)\/([^/]*)\/([^/]*)\/([^/]*)\/?$/, '/$1/$2/$3/$4/')
-               .replace(/^\/PATH\/([^/]*)\/([^/]*)\/([^/]*)\/([^/]*)\/([^/]*)\/?$/, '/$1/$2/$3/$4/$5/');
-}
+const PATH_SOURCE = process.env.PATH_SOURCE;
+const PATH_DEST = process.env.PATH_DEST;
 
 // Proxy middleware
-app.use('/advice', createProxyMiddleware({
+app.use(`/${PATH_SOURCE}`, createProxyMiddleware({
     target: TARGET,                       // Use dynamic target
     changeOrigin: true,
-    pathRewrite: customPathRewrite,       // Use custom path rewrite function
+    pathRewrite: {
+        [`^/${PATH_SOURCE}`]: PATH_DEST   // Use dynamic path rewriting
+    },
     headers: {                            // Set appropriate headers
-        'Host': process.env.TARGET,
+        'Host': TARGET,                   // Dynamic Host header
         'X-Forwarded-For': (req) => req.headers['x-forwarded-for'] || req.connection.remoteAddress,
-        'Cache-Control': req => req.headers['cache-control'] || 'no-cache',
+        'Cache-Control': (req) => req.headers['cache-control'] || 'no-cache',
     },
     proxyTimeout: 5000,                   // Optional: Set a timeout
 }));

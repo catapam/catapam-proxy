@@ -12,31 +12,31 @@ const PROXY_URL = process.env.PROXY_URL || `http://localhost:${process.env.PORT 
 app.use(
     `/${PATH_SOURCE}`,
     createProxyMiddleware({
-        target: `https://${TARGET}`, // Use dynamic target
+        target: `https://${TARGET}`,
         changeOrigin: true,
         pathRewrite: {
-            [`^/${PATH_SOURCE}`]: PATH_DEST, // Use dynamic path rewriting
+            [`^/${PATH_SOURCE}`]: '', // Rewrite the PATH_SOURCE to root path
         },
-        headers: { // Set appropriate headers
+        headers: {
             Host: TARGET,
             'X-Forwarded-For': (req) => req.headers['x-forwarded-for'] || req.connection.remoteAddress,
             'Cache-Control': (req) => req.headers['cache-control'] || 'no-cache',
         },
-        proxyTimeout: 5000, // Optional: Set a timeout
-        selfHandleResponse: true, // Intercept response to modify it
+        proxyTimeout: 5000,
+        selfHandleResponse: true,
 
         onProxyRes: responseInterceptor(async (responseBuffer, proxyRes, req, res) => {
-            // Convert the response buffer to a string
             let responseBody = responseBuffer.toString('utf8');
 
-            // Replace target URL with proxy URL in the response body
-            responseBody = responseBody.replace(new RegExp(`https://${TARGET}`, 'g'), PROXY_URL);
+            // Replace all instances of the TARGET URL with the PROXY_URL
+            const targetUrlPattern = new RegExp(`https?:\/\/(www\.)?${TARGET}`, 'g');
+            responseBody = responseBody.replace(targetUrlPattern, PROXY_URL);
 
-            // Return the modified response
             return responseBody;
         }),
     })
 );
+
 
 // Fallback route
 app.get('*', (req, res) => {

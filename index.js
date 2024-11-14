@@ -17,9 +17,8 @@ app.use(
         target: `https://${TARGET}`,
         changeOrigin: true,
         pathRewrite: (path, req) => {
-            // Check if the path already includes the proxy URL and remove it if necessary
-            const cleanedPath = path.replace(new RegExp(`^/${PATH_SOURCE}/${PATH_SOURCE}`), `/${PATH_SOURCE}`);
-            return cleanedPath.replace(`/${PATH_SOURCE}`, ''); // Remove PATH_SOURCE prefix
+            // Clean up any duplication of PATH_SOURCE or proxy domain
+            return path.replace(new RegExp(`/${PATH_SOURCE}/{0,1}`, 'g'), '/').replace(/\/+/g, '/').replace(`/${TARGET}`, '');
         },
         logLevel: 'debug',
         headers: {
@@ -29,6 +28,11 @@ app.use(
         },
         proxyTimeout: 5000,
         selfHandleResponse: true,
+
+        onProxyReq: (proxyReq, req, res) => {
+            // Sanitize the URL path before sending it to the target
+            proxyReq.path = proxyReq.path.replace(new RegExp(`/${PATH_SOURCE}/{0,1}`, 'g'), '/').replace(/\/+/g, '/');
+        },
 
         onProxyRes: responseInterceptor(async (responseBuffer, proxyRes, req, res) => {
             let responseBody = responseBuffer.toString('utf8');

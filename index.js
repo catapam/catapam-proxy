@@ -1,3 +1,5 @@
+// Proxy setup created by Matheus Andrade
+
 const express = require('express');
 const { createProxyMiddleware, responseInterceptor } = require('http-proxy-middleware');
 const app = express();
@@ -12,11 +14,11 @@ const PROXY_URL = process.env.PROXY_URL || `http://localhost:${process.env.PORT 
 app.use(
     `/${PATH_SOURCE}`,
     createProxyMiddleware({
-        target: `https://${TARGET}`,
         changeOrigin: true,
-        pathRewrite: {
-            [`^/${PATH_SOURCE}`]: '', // Rewrite the PATH_SOURCE to root path
+        router: {
+            [`/${PATH_SOURCE}`]: `https://${TARGET}`,
         },
+        logLevel: 'debug',
         headers: {
             Host: TARGET,
             'X-Forwarded-For': (req) => req.headers['x-forwarded-for'] || req.connection.remoteAddress,
@@ -28,7 +30,6 @@ app.use(
         onProxyRes: responseInterceptor(async (responseBuffer, proxyRes, req, res) => {
             let responseBody = responseBuffer.toString('utf8');
 
-            // Replace all instances of the TARGET URL with the PROXY_URL
             const targetUrlPattern = new RegExp(`https?:\/\/(www\.)?${TARGET}`, 'g');
             responseBody = responseBody.replace(targetUrlPattern, PROXY_URL);
 
@@ -36,7 +37,6 @@ app.use(
         }),
     })
 );
-
 
 // Fallback route
 app.get('*', (req, res) => {

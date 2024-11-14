@@ -3,22 +3,36 @@ const { createProxyMiddleware } = require('http-proxy-middleware');
 
 const app = express();
 
-// Load environment variables
+// Environment variables for dynamic configuration
 const TARGET = process.env.TARGET;
-const FORWARDED_HOST = process.env.FORWARDED_HOST;
-const PATH_REWRITE = process.env.PATH_REWRITE || '^/';
+const PATH = process.env.PATH;
 
-// Proxy requests to /news without adding /news again
-app.use('/news', createProxyMiddleware({
-    target: TARGET,                         // Use environment variable for target
-    changeOrigin: true,                     // Keep the correct origin
-    pathRewrite: { [PATH_REWRITE]: '' },    // Use environment variable for pathRewrite
-    headers: {                               // Ensure the X-Forwarded-Host is correct
-        'X-Forwarded-Host': FORWARDED_HOST, // Use environment variable for X-Forwarded-Host
-    }
+// Helper function to rewrite paths to match NGINX rules
+function customPathRewrite(path, req) {
+    return path.replace(/^\/PATH\/?/, '/')
+               .replace(/^\/PATH\/(wp-(?:content|includes|admin))\/(.*)/, '/$1/$2')
+               .replace(/^\/PATH\/([a-z-]+\.[a-z]+)$/, '/$1')
+               .replace(/^\/PATH\/([^/]*)\/?$/, '/$1/')
+               .replace(/^\/PATH\/([^/]*)\/([^/]*)\/?$/, '/$1/$2/')
+               .replace(/^\/PATH\/([^/]*)\/([^/]*)\/([^/]*)\/?$/, '/$1/$2/$3/')
+               .replace(/^\/PATH\/([^/]*)\/([^/]*)\/([^/]*)\/([^/]*)\/?$/, '/$1/$2/$3/$4/')
+               .replace(/^\/PATH\/([^/]*)\/([^/]*)\/([^/]*)\/([^/]*)\/([^/]*)\/?$/, '/$1/$2/$3/$4/$5/');
+}
+
+// Proxy middleware
+app.use('/advice', createProxyMiddleware({
+    target: TARGET,                       // Use dynamic target
+    changeOrigin: true,
+    pathRewrite: customPathRewrite,       // Use custom path rewrite function
+    headers: {                            // Set appropriate headers
+        'Host': process.env.TARGET,
+        'X-Forwarded-For': (req) => req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+        'Cache-Control': req => req.headers['cache-control'] || 'no-cache',
+    },
+    proxyTimeout: 5000,                   // Optional: Set a timeout
 }));
 
-// Fallback route for non-proxied requests
+// Fallback route
 app.get('*', (req, res) => {
     res.status(200).send('This is not in WP Engine');
 });

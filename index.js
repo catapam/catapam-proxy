@@ -17,13 +17,9 @@ app.use(
         target: `https://${TARGET}`,
         changeOrigin: true,
         pathRewrite: (path, req) => {
-            // Ensure we remove any instance of the PATH_SOURCE prefix
-            let cleanedPath = path.replace(new RegExp(`^/${PATH_SOURCE}/?`), '');
-
-            // Remove any double slashes if they exist
-            cleanedPath = cleanedPath.replace(/\/+/g, '/');
-
-            return `/${cleanedPath}`;
+            // Initial path cleanup to remove any instance of `/${PATH_SOURCE}` at the beginning
+            let cleanedPath = path.replace(new RegExp(`^/${PATH_SOURCE}`), '');
+            return cleanedPath;
         },
         logLevel: 'debug',
         headers: {
@@ -35,9 +31,12 @@ app.use(
         selfHandleResponse: true,
 
         onProxyReq: (proxyReq, req, res) => {
-            // Further clean up the proxy path directly before sending to target
-            proxyReq.path = proxyReq.path.replace(new RegExp(`/${PATH_SOURCE}/?`, 'g'), '/');
-            proxyReq.path = proxyReq.path.replace(/\/+/g, '/'); // Remove any double slashes
+            // Full control of the path to remove any duplication of `/${PATH_SOURCE}`
+            let sanitizedPath = req.url.replace(new RegExp(`^/${PATH_SOURCE}`), '');
+            sanitizedPath = sanitizedPath.replace(/\/+/g, '/'); // Remove any double slashes
+
+            // Set the sanitized path directly
+            proxyReq.path = sanitizedPath.startsWith('/') ? sanitizedPath : `/${sanitizedPath}`;
         },
 
         onProxyRes: responseInterceptor(async (responseBuffer, proxyRes, req, res) => {

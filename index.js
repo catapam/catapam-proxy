@@ -10,7 +10,7 @@ const PATH_DEST = process.env.PATH_DEST;
 
 // Proxy middleware
 app.use(`/${PATH_SOURCE}`, createProxyMiddleware({
-    target: TARGET,                       // Use dynamic target
+    target: `https://${TARGET}`,                       // Use dynamic target
     changeOrigin: true,
     pathRewrite: {
         [`^/${PATH_SOURCE}`]: PATH_DEST   // Use dynamic path rewriting
